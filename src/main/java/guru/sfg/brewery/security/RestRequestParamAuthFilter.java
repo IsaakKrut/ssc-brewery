@@ -13,38 +13,18 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Slf4j
-public class RestRequestParamAuthFilter extends RestAuthFilter{
+public class RestRequestParamAuthFilter extends AbstractRestAuthFilter {
     public RestRequestParamAuthFilter(RequestMatcher requiresAuthenticationRequestMatcher) {
         super(requiresAuthenticationRequestMatcher);
     }
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse httpServletResponse) throws AuthenticationException, IOException, ServletException {
-        String username = getUsername(request);
-        String password = getPassword(request);
-
-        if (username == null){
-            username = "";
-        }
-        if (password == null){
-            password="";
-        }
-        log.debug("Authenticating User: " + username);
-
-        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
-
-        if (!StringUtils.isEmpty(username)) {
-            return this.getAuthenticationManager().authenticate(token);
-        } else {
-            return null;
-        }
-    }
-
-    private String getUsername(HttpServletRequest request) {
+    protected String getUsername(HttpServletRequest request) {
         return request.getParameter("Api-Key");
     }
 
-    private String getPassword(HttpServletRequest request) {
+    @Override
+    protected String getPassword(HttpServletRequest request) {
         return request.getParameter("Api-Secret");
     }
 }

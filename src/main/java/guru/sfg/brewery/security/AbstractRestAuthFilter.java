@@ -18,10 +18,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Slf4j
-public abstract class RestAuthFilter extends AbstractAuthenticationProcessingFilter {
+public abstract class AbstractRestAuthFilter extends AbstractAuthenticationProcessingFilter {
 
 
-    public RestAuthFilter(RequestMatcher requiresAuthenticationRequestMatcher) {
+    public AbstractRestAuthFilter(RequestMatcher requiresAuthenticationRequestMatcher) {
         super(requiresAuthenticationRequestMatcher);
     }
 
@@ -48,11 +48,6 @@ public abstract class RestAuthFilter extends AbstractAuthenticationProcessingFil
     }
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws AuthenticationException, IOException, ServletException {
-        return null;
-    }
-
-    @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
         if (this.logger.isDebugEnabled()) {
             this.logger.debug("Authentication success. Updating SecurityContextHolder to contain: " + authResult);
@@ -61,5 +56,31 @@ public abstract class RestAuthFilter extends AbstractAuthenticationProcessingFil
         SecurityContextHolder.getContext().setAuthentication(authResult);
 
     }
+
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse httpServletResponse) throws AuthenticationException, IOException, ServletException {
+        String username = getUsername(request);
+        String password = getPassword(request);
+
+        if (username == null){
+            username = "";
+        }
+        if (password == null){
+            password="";
+        }
+        log.debug("Authenticating User: " + username);
+
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
+
+        if (!StringUtils.isEmpty(username)) {
+            return this.getAuthenticationManager().authenticate(token);
+        } else {
+            return null;
+        }
+    }
+
+    protected abstract String getUsername(HttpServletRequest request);
+
+    protected abstract String getPassword(HttpServletRequest request);
 
 }
