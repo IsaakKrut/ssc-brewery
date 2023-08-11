@@ -24,6 +24,13 @@ public class BreweryRestControllerIT extends BaseIT {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void findBreweriesBasicAuthAdminRole() throws Exception{
+        mockMvc.perform(get("/brewery/api/v1/breweries")
+                        .with(httpBasic("spring", "guru")))
+                .andExpect(status().isOk());
+    }
+
 
     @Test
     void findBreweriesBasicAuthCustomerRole() throws Exception{

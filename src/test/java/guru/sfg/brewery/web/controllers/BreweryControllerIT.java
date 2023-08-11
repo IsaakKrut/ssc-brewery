@@ -17,15 +17,23 @@ public class BreweryControllerIT extends BaseIT{
     }
 
     @Test
-    void findBreweriesBasicAuthNotCustomer() throws Exception {
+    void findBreweriesBasicAuthUser() throws Exception {
         mockMvc.perform(get("/brewery/breweries").with(httpBasic("user", "password")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
+    void findBreweriesBasicAuthAdmin() throws Exception {
+        mockMvc.perform(get("/brewery/breweries").with(httpBasic("spring", "guru")))
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(view().name("breweries/index"))
+                .andExpect(model().attributeExists("breweries"));
+    }
+
+    @Test
     void findBreweriesBasicAuthCustomer() throws Exception {
         mockMvc.perform(get("/brewery/breweries").with(httpBasic("scott", "tiger")))
-                .andExpect(status().isOk())
+                .andExpect(status().is2xxSuccessful())
                 .andExpect(view().name("breweries/index"))
                 .andExpect(model().attributeExists("breweries"));
     }
