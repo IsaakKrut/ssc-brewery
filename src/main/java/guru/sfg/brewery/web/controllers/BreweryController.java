@@ -30,7 +30,6 @@ import java.util.List;
 
 
 @RequiredArgsConstructor
-@RequestMapping("/brewery")
 @Controller
 public class BreweryController {
 
