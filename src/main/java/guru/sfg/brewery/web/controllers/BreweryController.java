@@ -31,6 +31,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Controller
+@RequestMapping("/brewery")
 public class BreweryController {
 
     private final BreweryService breweryService;

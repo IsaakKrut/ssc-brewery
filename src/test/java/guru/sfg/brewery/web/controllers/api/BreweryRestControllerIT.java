@@ -13,13 +13,13 @@ public class BreweryRestControllerIT extends BaseIT {
 
     @Test
     void findBreweriesNoAuth() throws Exception{
-        mockMvc.perform(get("/api/v1/breweries"))
+        mockMvc.perform(get("/brewery/api/v1/breweries"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void findBreweriesBasicAuthUserRole() throws Exception{
-        mockMvc.perform(get("/api/v1/breweries")
+        mockMvc.perform(get("/brewery/api/v1/breweries")
                         .with(httpBasic("user", "password")))
                 .andExpect(status().isForbidden());
     }
@@ -27,7 +27,7 @@ public class BreweryRestControllerIT extends BaseIT {
 
     @Test
     void findBreweriesBasicAuthCustomerRole() throws Exception{
-        mockMvc.perform(get("/api/v1/breweries")
+        mockMvc.perform(get("/brewery/api/v1/breweries")
                         .with(httpBasic("scott", "tiger")))
                 .andExpect(status().isOk());
     }
