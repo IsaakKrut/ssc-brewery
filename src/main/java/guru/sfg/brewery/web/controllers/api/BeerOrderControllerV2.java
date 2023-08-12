@@ -51,7 +51,7 @@ public class BeerOrderControllerV2 {
     }
 
     @ReadOrderPermissionV2
-    @GetMapping("orders/{orderId}")
+    @GetMapping("{orderId}")
     public BeerOrderDto getOrder(@PathVariable("orderId") UUID orderId){
         BeerOrderDto beerOrderDto =  beerOrderService.getOrderById(orderId);
 
@@ -64,3 +64,10 @@ public class BeerOrderControllerV2 {
         return beerOrderDto;
     }
 }
+
+
+
+
+
+
+
