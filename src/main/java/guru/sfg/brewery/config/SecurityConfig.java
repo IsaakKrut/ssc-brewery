@@ -44,8 +44,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.addFilterBefore(restHeaderAuthFilter(authenticationManager())
-                , UsernamePasswordAuthenticationFilter.class)
-                .csrf().disable();
+                , UsernamePasswordAuthenticationFilter.class);
+
         http.addFilterBefore(restRequestParamAuthFilter(authenticationManager())
                 , RestHeaderAuthFilter.class);
         http
@@ -58,7 +58,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authenticated()
                 .and()
                 .formLogin().and()
-                .httpBasic();
+                .httpBasic().and()
+                .csrf().ignoringAntMatchers("/h2-console/**", "/api/**");
 
         // h2 console config
         http.headers().frameOptions().sameOrigin();
