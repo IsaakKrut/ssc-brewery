@@ -1,13 +1,9 @@
 package guru.sfg.brewery.config;
 
-import guru.sfg.brewery.security.RestHeaderAuthFilter;
-import guru.sfg.brewery.security.RestRequestParamAuthFilter;
+import guru.sfg.brewery.security.google.Google2faFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -16,53 +12,42 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.data.repository.query.SecurityEvaluationContextExtension;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
+import org.springframework.security.web.session.SessionManagementFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
+/**
+ * Created by jt on 6/13/20.
+ */
 @RequiredArgsConstructor
-@EnableWebSecurity
 @Configuration
-@EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
+@EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final UserDetailsService userDetailsService;
     private final PersistentTokenRepository persistentTokenRepository;
+    private final Google2faFilter google2faFilter;
 
-    // Needed to use Spring Data JPA SPeL
+    // needed for use with Spring Data JPA SPeL
     @Bean
-    public SecurityEvaluationContextExtension securityEvaluationContextExtension(){
+    public SecurityEvaluationContextExtension securityEvaluationContextExtension() {
         return new SecurityEvaluationContextExtension();
-    }
-
-
-    public RestHeaderAuthFilter restHeaderAuthFilter(AuthenticationManager authenticationManager){
-        RestHeaderAuthFilter filter = new RestHeaderAuthFilter(new AntPathRequestMatcher("/api/**"));
-        filter.setAuthenticationManager(authenticationManager);
-        return filter;
-    }
-
-    public RestRequestParamAuthFilter restRequestParamAuthFilter(AuthenticationManager authenticationManager){
-        RestRequestParamAuthFilter filter = new RestRequestParamAuthFilter(new AntPathRequestMatcher("/api/**"));
-        filter.setAuthenticationManager(authenticationManager);
-        return filter;
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.addFilterBefore(restHeaderAuthFilter(authenticationManager())
-                , UsernamePasswordAuthenticationFilter.class);
 
-        http.addFilterBefore(restRequestParamAuthFilter(authenticationManager())
-                , RestHeaderAuthFilter.class);
+        http.addFilterBefore(google2faFilter, SessionManagementFilter.class);
+
         http
-                .authorizeRequests(authorize->
-                        authorize
-                                .antMatchers("/h2-console/**").permitAll()
-                                .antMatchers("/", "/webjars/**", "/resources/**").permitAll())
-               .authorizeRequests()
-                .anyRequest()
-                .authenticated()
+                .authorizeRequests(authorize -> {
+                    authorize
+                            .antMatchers("/h2-console/**").permitAll() //do not use in production!
+                            .antMatchers("/", "/webjars/**", "/login", "/resources/**").permitAll();
+                } )
+                .authorizeRequests()
+                .anyRequest().authenticated()
                 .and()
                 .formLogin(loginConfigurer -> {
                     loginConfigurer
@@ -73,21 +58,22 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                             .failureUrl("/?error");
                 })
                 .logout(logoutConfigurer -> {
-                    logoutConfigurer.logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
+                    logoutConfigurer
+                            .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
                             .logoutSuccessUrl("/?logout")
                             .permitAll();
                 })
-                .httpBasic().and()
-                .csrf().ignoringAntMatchers("/h2-console/**", "/api/**")
+                .httpBasic()
+                .and().csrf().ignoringAntMatchers("/h2-console/**", "/api/**")
                 .and().rememberMe()
-                        .tokenRepository(persistentTokenRepository)
-                        .userDetailsService(userDetailsService);;
+                .tokenRepository(persistentTokenRepository)
+                .userDetailsService(userDetailsService);
 
+        //.rememberMe()
+        //.key("sfg-key")
+        //.userDetailsService(userDetailsService);
 
-                //    .key("sfg-key")
-                  //  .userDetailsService(userDetailsService);
-
-        // h2 console config
+        //h2 console config
         http.headers().frameOptions().sameOrigin();
     }
 
@@ -96,8 +82,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
-//    @Override
-//    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    // @Override
+    //   protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    // auth.userDetailsService(this.jpaUserDetailsService).passwordEncoder(passwordEncoder());
+
 //        auth.inMemoryAuthentication()
 //                .withUser("spring")
 //                .password("{bcrypt}$2a$10$7tYAvVL2/KwcQTcQywHIleKueg4ZK7y7d44hKyngjTwHCDlesxdla")
@@ -105,19 +93,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //                .and()
 //                .withUser("user")
 //                .password("{sha256}1296cefceb47413d3fb91ac7586a4625c33937b4d3109f5a4dd96c79c46193a029db713b96006ded")
-//                .roles("USER")
-//                .and()
-//                .withUser("scott")
-//                .password("{ldap}{SSHA}A10yuLOEGbSTbHl7csQHk7X0X3rwrqdmBomRsA==s")
-//                .roles("CUSTOMER");;
-//    }
+//                .roles("USER");
+//
+//        auth.inMemoryAuthentication().withUser("scott").password("{bcrypt15}$2a$15$baOmQtw8UqWZRDQhMFPFj.xhkkWveCTQHe4OBdr8yw8QshejiSbI6").roles("CUSTOMER");
+    //  }
 
     //    @Override
 //    @Bean
 //    protected UserDetailsService userDetailsService() {
 //        UserDetails admin = User.withDefaultPasswordEncoder()
-//                .username("isaak")
-//                .password("pass")
+//                .username("spring")
+//                .password("guru")
 //                .roles("ADMIN")
 //                .build();
 //
@@ -129,4 +115,19 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //
 //        return new InMemoryUserDetailsManager(admin, user);
 //    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
